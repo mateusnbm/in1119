@@ -71,34 +71,60 @@ Abaixo, geramos um subconjunto contendo apenas as entradas de alunos que realiza
 
 ```{r}
 
-fdata = subset(dataset, TP_PRESENCA_CN == 1 & TP_PRESENCA_CH == 1 & TP_PRESENCA_LC == 1 & TP_PRESENCA_MT == 1 & TP_PRESENCA_MT == 1)
+fdata = subset(
+  dataset, 
+  TP_PRESENCA_CN == 1 & 
+    TP_PRESENCA_CH == 1 & 
+    TP_PRESENCA_LC == 1 & 
+    TP_PRESENCA_MT == 1 & 
+    TP_PRESENCA_MT == 1
+  )
+
+head(fdata)
 
 ```
 
-##
+## Análise das Notas por Sexo
+
+### Preparando os Dados
+
+Agrupamos os dados pelo gênero (M e F) e depois calculamos as médias das notas para cada área do conhecimento.
 
 ```{r}
 
-gdata = fdata %>% group_by(TP_SEXO) 
-sdata = gdata %>% summarise(NOTA_CN_MEAN = sum(NU_NOTA_CN)/n(), NOTA_CH_MEAN = sum(NU_NOTA_CH)/n(), NOTA_LC_MEAN = sum(NU_NOTA_LC)/n(), NOTA_MT_MEAN = sum(NU_NOTA_MT)/n(), NOTA_RD_MEAN = sum(NU_NOTA_REDACAO)/n())
-sdata
+sex_gb_data = 
+  fdata %>% 
+  group_by(TP_SEXO) %>%
+  summarise(
+    NOTA_CN_MEAN = sum(NU_NOTA_CN)/n(), 
+    NOTA_CH_MEAN = sum(NU_NOTA_CH)/n(), 
+    NOTA_LC_MEAN = sum(NU_NOTA_LC)/n(), 
+    NOTA_MT_MEAN = sum(NU_NOTA_MT)/n(), 
+    NOTA_RD_MEAN = sum(NU_NOTA_REDACAO)/n()
+  )
+
+head(sex_gb_data)
 
 ```
 
+### Gerando o Gráfico
+
+Agora, que já temos os dados necessários, precisamos formatar eles para facilitar o uso com a função que gerará o gráfico. 
+
+O ideal seria utilizar alguma função para realizar a formatação mas, para agilizar e evitar estresse, iremos fazer manualmente.
+
 ```{r}
 
-par(mar = c(4,8,4,10))
-
-gdata = data.matrix(read.table(text=" M F
+sex_gb_data_fmt = data.matrix(read.table(text = "
+     M         F
   0  577.0799  566.4753
   1  560.2741  518.3447
   2  532.5310  525.7392
   3  510.8027  519.6946
   4  500.6476  488.9929
   ", header = TRUE))
-gdata
 
-names = as.vector(c(
+areas_names = as.vector(c(
   "C. Humanas ",
   "Matemática ", 
   "Linguagens ", 
@@ -106,9 +132,30 @@ names = as.vector(c(
   "C. da Natureza " 
   ))
 
-m_data = gdata[,"M"]
-f_data = gdata[,"F"]
+sex_gb_data_fmt
+
+```
+
+Código para gerar o gráfico (o bloco abaixo precisa ser executado de uma vez, por completo).
+
+```{r}
+
+# Ajusta as dimensões do retângulo sobre o qual o gráfico é desenhado.
+# Isto é necessário para que os títulos dispostos ao longo do eixo Y fiquem visíveis.
+
+par(mar = c(4, 8, 4, 3))
+
+# Criamos dois vetores, um com as médias dos homens e outro com as médias das mulheres.
+# Apenas para facilitar passar os dados para a função que desenha o gráfico
+
+m_data = sex_gb_data_fmt[,"M"]
+f_data = sex_gb_data_fmt[,"F"]
+
+# Intervalo com a menor e maior média.
+
 grades_range = range(c(m_data, f_data))
+
+# Gera o gráfico sem as linhas, legendas e o grid.
 
 plot(
   grades_range, 
@@ -122,219 +169,196 @@ plot(
   xlim = c(400, 700)
   ) 
 
+# Desenha as duas linhas (homes e mulheres).
+
 lines(m_data, c(1:5), type = "o", lwd = 2, col = "blue") 
 lines(f_data, c(1:5), type = "o", lwd = 2, col = "red")
 
-#legend(450, 0, 1:2, cex=0.8, col="red", title="Mulheres")
+# Adiciona o grid e dispõe o texto ao longo do eixo Y.
 
-grid (NULL,NULL, lty = 6, col = "cornsilk2") 
+grid (NULL, NULL, lty = 6, col = "cornsilk2") 
 axis(2, at = c(1:5), labels = FALSE)
-text(y = c(1:5), par("usr")[1], labels = names, srt = 0, pos = 2, xpd = TRUE)
+text(y = c(1:5), par("usr")[1], labels = areas_names, srt = 0, pos = 2, xpd = TRUE)
+
+# Adiciona a legenda das linhas.
 
 legend("topright", lty = "solid", lwd = 2, col=c("blue", "red"), legend = c("Homens", "Mulheres"))
 
 ```
 
+## Análise das Notas por Região
+
+### Preparando os Dados
+
+Agrupamos os dados por região (N, NE, SE, S e MW) e depois calculamos as médias das notas para cada área do conhecimento.
+
 ```{r}
 
-plot(
-    gdata[,"M"], 
-    rownames(gdata), 
-    type="o", 
-    main = "Desempenho das Disciplinas por Área e Sexo", 
-    xlab = "Média das Notas",
-    ylab = "Área do Conhecimento"
-    )
+# Agrupa os dados.
+
+region_gb_data = 
+  fdata %>% 
+  group_by(CO_REGIAO_RESIDENCIA)%>% 
+  summarise(
+    NOTA_CN_MEAN = sum(NU_NOTA_CN)/n(),
+    NOTA_CH_MEAN = sum(NU_NOTA_CH)/n(),
+    NOTA_LC_MEAN = sum(NU_NOTA_LC)/n(),
+    NOTA_MT_MEAN = sum(NU_NOTA_MT)/n(),
+    NOTA_RD_MEAN = sum(NU_NOTA_REDACAO)/n()
+  )
+
+# Substitui a codificacão numérica pelo nome de cada região.
+
+region_gb_data$CO_REGIAO_RESIDENCIA = factor(
+  region_gb_data$CO_REGIAO_RESIDENCIA, 
+  levels = c(1, 2, 3, 4, 5), 
+  labels=c("NORTE", "NORDESTE", "SUDESTE", "SUL", "CENTRO-OESTE")
+  )
+
+# Listando o resultado obtido.
+
+region_gb_data
 
 ```
 
+### Gerando o Gráfico
+
+Agora, que já temos os dados necessários, precisamos formatar eles para facilitar o uso com a função que gerará o gráfico. 
+
+O ideal seria utilizar alguma função para realizar a formatação mas, para agilizar e evitar estresse, iremos fazer manualmente.
 
 ```{r}
 
-dataset[is.na(dataset)] = 0
-
-fdata = subset(dataset, TP_PRESENCA_CN == 1 & TP_PRESENCA_CH == 1 & TP_PRESENCA_LC == 1 & TP_PRESENCA_MT == 1 & TP_PRESENCA_MT == 1)
-gdata = fdata %>% group_by(CO_REGIAO_RESIDENCIA) 
-sdata = gdata %>% summarise(NOTA_CN_MEAN = sum(NU_NOTA_CN)/n(), NOTA_CH_MEAN = sum(NU_NOTA_CH)/n(), NOTA_LC_MEAN = sum(NU_NOTA_LC)/n(), NOTA_MT_MEAN = sum(NU_NOTA_MT)/n(), NOTA_RD_MEAN = sum(NU_NOTA_REDACAO)/n())
-sdata$CO_REGIAO_RESIDENCIA <- factor(sdata$CO_REGIAO_RESIDENCIA, levels = c(1, 2, 3, 4, 5), labels=c("NORTE", "NORDESTE", "SUDESTE", "SUL", "CENTRO-OESTE"))
-sdata
-
-```
-
-```{r}
-
-gdata = data.matrix(read.table(text="            CN CH LC MT RD
+region_gb_data_fmt = data.matrix(read.table(text = "
+                CN        CH        LC        MT        RD
   NORTE         473.8624	548.3448	505.6513	505.2629	480.2929
   NORDESTE      480.9937	556.4959	513.9111	520.2293	500.9236
   SUDESTE       508.3383	586.6912	544.9365	556.2115	540.1123
   SUL	          504.4326	586.9306	542.8668	547.8609	523.2844
-  CENTRO-OESTE	494.8638	568.8757	528.2555	531.4668	511.0313", header = TRUE))
+  CENTRO-OESTE	494.8638	568.8757	528.2555	531.4668	511.0313
+  ", header = TRUE))
 
-pdf("foo.pdf")
+region_gb_data_fmt
+
+```
+
+Código para gerar o gráfico (o bloco abaixo precisa ser executado de uma vez, por completo).
+
+```{r}
+
 par(mar = c(5,4,4,10))
+
 barplot(
-  gdata, 
+  region_gb_data_fmt, 
   main = "Média das Notas por Região", 
   xlab = "Área do Conhecimento",
   ylab = "Média das Notas",
-  #col = c("BLUE", "YELLOW", "GREEN", "RED", "PURPLE"), 
-  col=brewer.pal(nrow(gdata), "Paired"),
+  col=brewer.pal(nrow(region_gb_data_fmt), "Paired"),
   names.arg = c("C. da Natureza", "C. Humanas", "Linguagens", "Matemática", "Redação"),
   cex.names = 0.70,
   ylim = c(400, 600),
   beside = TRUE,
-  legend = rownames(gdata),
-  #args.legend=list(x=ncol(fuck) + 100, y=max(colSums(fuck))+100, bty = "n")
+  legend = rownames(region_gb_data_fmt),
   args.legend = list(x ='right', bty='n', inset=c(-0.39,0), xpd = TRUE),
   xpd = FALSE
   )
-dev.off()
 
 ```
 
+## Análise das Notas por Anos pós Formatura no Ensino Médio
+
+### Preparando os Dados
+
+Abaixo, geramos um subconjunto contendo apenas as entradas de alunos que realizaram todas as provas e informaram o ano de conclusão do ensino médio (uma filtragem).
+
 ```{r}
 
-dataset[is.na(dataset)] = 0
+cfdata = subset(
+  dataset, 
+  TP_PRESENCA_CN == 1 & 
+    TP_PRESENCA_CH == 1 & 
+    TP_PRESENCA_LC == 1 & 
+    TP_PRESENCA_MT == 1 & 
+    TP_PRESENCA_MT == 1 & 
+    TP_ANO_CONCLUIU > 0
+  )
 
-fdata = subset(dataset, TP_PRESENCA_CN == 1 & TP_PRESENCA_CH == 1 & TP_PRESENCA_LC == 1 & TP_PRESENCA_MT == 1 & TP_PRESENCA_MT == 1 & TP_ANO_CONCLUIU > 0)
-gdata = fdata %>% group_by(TP_ANO_CONCLUIU)
-sdata = gdata %>% summarise(N_ALUNOS = n())
-sdata
+```
+
+Agrupamos os dados pelo número de anos desde a conclusão do ensino médio e depois calculamos as médias das notas para cada área do conhecimento.
+
+```{r}
+
+em_gp_data = 
+  cfdata %>% 
+  group_by(TP_ANO_CONCLUIU) %>% 
+  summarise(
+    NOTA_CN_MEAN = sum(NU_NOTA_CN)/n(),
+    NOTA_CH_MEAN = sum(NU_NOTA_CH)/n(),
+    NOTA_LC_MEAN = sum(NU_NOTA_LC)/n(),
+    NOTA_MT_MEAN = sum(NU_NOTA_MT)/n(),
+    NOTA_RD_MEAN = sum(NU_NOTA_REDACAO)/n()
+    )
+
+em_gp_data
 
 ```
 
 
-```{r}
+### Gerando o Gráfico
 
-dataset[is.na(dataset)] = 0
+Agora, que já temos os dados necessários, precisamos formatar eles para facilitar o uso com a função que gerará o gráfico. 
 
-fdata = subset(dataset, TP_PRESENCA_CN == 1 & TP_PRESENCA_CH == 1 & TP_PRESENCA_LC == 1 & TP_PRESENCA_MT == 1 & TP_PRESENCA_MT == 1 & TP_ANO_CONCLUIU > 0)
-gdata = fdata %>% group_by(TP_ANO_CONCLUIU)
-sdata = gdata %>% summarise(NOTA_CN_MEAN = sum(NU_NOTA_CN)/n(), NOTA_CH_MEAN = sum(NU_NOTA_CH)/n(), NOTA_LC_MEAN = sum(NU_NOTA_LC)/n(), NOTA_MT_MEAN = sum(NU_NOTA_MT)/n(), NOTA_RD_MEAN = sum(NU_NOTA_REDACAO)/n())
-sdata
-
-```
+O ideal seria utilizar alguma função para realizar a formatação mas, para agilizar e evitar estresse, iremos fazer manualmente.
 
 ```{r}
 
-
-gdata = data.matrix(read.table(text=" 1 2 3 4 5 6 7 8 9 10 11 >11
+em_gp_data_fmt = data.matrix(read.table(text = "
+                  1        2        3        4        5        6        7        8        9        10       11       >11
   CDNATUREZA      498.4525 498.4684 496.2037 495.3493 494.1237 492.4198 493.0256 491.1260 491.9990 493.8888 491.2914 493.8732
   CHUMANAS        573.7264 574.1270 572.7351 573.8095 574.3243 574.8060 576.9054 574.6819 576.4254 578.0239 576.7493 582.2480
   LINGUAGENS      532.8030 533.5877 531.7910 532.5863 532.1315 531.4086 532.5693 528.6013 529.2636 529.0768 525.8270 523.8404
   MATEMÁTICA      541.5357 541.5881 538.6611 534.6175 534.6175 532.2354 532.4638 526.9232 525.4294 525.1752 521.4379 515.9948
-  REDAÇÃO   	    544.5676 539.9269 529.9921 521.5879 511.9225 503.4143 500.5351 488.7527 487.9442 486.4491 479.2771 466.5754", header = TRUE))
+  REDAÇÃO   	    544.5676 539.9269 529.9921 521.5879 511.9225 503.4143 500.5351 488.7527 487.9442 486.4491 479.2771 466.5754
+  ", header = TRUE))
 
-gdata = gdata * 0.2
+em_gp_data_fmt = em_gp_data_fmt * 0.2
 
-par(mar = c(5,4,4,10))
+```
+
+Código para gerar o gráfico (o bloco abaixo precisa ser executado de uma vez, por completo).
+
+```{r}
+
+par(mar = c(5, 4 , 4, 10))
+
 barplot(
-  gdata, 
+  em_gp_data_fmt, 
   main="Média das Notas por Anos pós Formatura no Ensino Médio",
   xlab="Número de Anos", 
   ylab = "Média das Notas",
-  col=brewer.pal(nrow(gdata), "Paired"),
+  col=brewer.pal(nrow(em_gp_data_fmt), "Paired"),
   names.arg = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", ">11"),
   legend = c("C. da Natureza", "C. Humanas", "Linguagens", "Matemática", "Redação"),
-  cex.names = 0.70,
+  cex.names = 0.9,
   ylim = c(0, 600),
   args.legend = list(x ='right', bty='n', inset=c(-0.39,0), xpd = TRUE),
   xpd = FALSE
   )
 
-
-barplot(
-  gdata, 
-  main = "Média das Notas por Região", 
-  xlab = "Área do Conhecimento",
-  ylab = "Média das Notas",
-  #col = c("BLUE", "YELLOW", "GREEN", "RED", "PURPLE"), 
-  col=brewer.pal(nrow(gdata), "Paired"),
-  names.arg = c("C. da Natureza", "C. Humanas", "Linguagens", "Matemática", "Redação"),
-  cex.names = 0.70,
-  ylim = c(400, 600),
-  beside = TRUE,
-  legend = rownames(gdata),
-  #args.legend=list(x=ncol(fuck) + 100, y=max(colSums(fuck))+100, bty = "n")
-  args.legend = list(x ='right', bty='n', inset=c(-0.39,0), xpd = TRUE),
-  xpd = FALSE
-  )
-
 ```
 
+## ...
 
-```{r}
+xxx
 
-dataset[is.na(dataset)] = 0
+### Preparando os Dados
 
-fdata = subset(dataset, TP_PRESENCA_CN == 1 & TP_PRESENCA_CH == 1 & TP_PRESENCA_LC == 1 & TP_PRESENCA_MT == 1 & TP_PRESENCA_MT == 1 & TP_ANO_CONCLUIU > 0)
-gdata = fdata %>% group_by(TP_ANO_CONCLUIU)
-sdata = gdata %>% summarise(NOTA_MEAN = sum((NU_NOTA_CN+NU_NOTA_CH+NU_NOTA_LC+NU_NOTA_MT)/4)/n())
-sdata
+xxx
 
-```
+### Gerando o Gráfico
 
-```{r}
-
-counts <- table(mtcars$gear)
-counts
-
-barplot(
-  as.vector(unlist(sdata["NOTA_MEAN"])), 
-  main="Média das Notas por Anos pós Formatura no Ensino Médio", 
-  xlab="Número de Anos",
-  names.arg = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", ">11"),
-  ylim = c(520, 540),
-  xpd = FALSE
-  )
-
-
-
-par(mar = c(5,4,4,10))
-barplot(
-  gdata, 
-  main = "Média das Notas por Região", 
-  xlab = "Área do Conhecimento", 
-  #col = c("BLUE", "YELLOW", "GREEN", "RED", "PURPLE"), 
-  col=brewer.pal(nrow(gdata), "Paired"),
-  names.arg = c("C. da Natureza", "C. Humanas", "Linguagens", "Matemática", "Redação"),
-  cex.names = 0.70,
-  ylim = c(0, 600),
-  beside = TRUE,
-  legend = rownames(fuck),
-  #args.legend=list(x=ncol(fuck) + 100, y=max(colSums(fuck))+100, bty = "n")
-  args.legend = list(x ='right', bty='n', inset=c(-0.39,0), xpd = TRUE)
-  )
-
-```
-
-
-```{r}
-
-gdata = data.matrix(read.table(text="            CN CH LC MT RD
-  NORTE         473.8624	548.3448	505.6513	505.2629	480.2929
-  NORDESTE      480.9937	556.4959	513.9111	520.2293	500.9236
-  SUDESTE       508.3383	586.6912	544.9365	556.2115	540.1123
-  SUL	          504.4326	586.9306	542.8668	547.8609	523.2844
-  CENTRO-OESTE	494.8638	568.8757	528.2555	531.4668	511.0313", header = TRUE))
-
-par(mar = c(5,4,4,10))
-barplot(
-  gdata, 
-  main = "Média das Notas por Anos pós Conclusão do EM", 
-  xlab = "Área do Conhecimento", 
-  #col = c("BLUE", "YELLOW", "GREEN", "RED", "PURPLE"), 
-  col=brewer.pal(nrow(gdata), "Paired"),
-  names.arg = c("C. da Natureza", "C. Humanas", "Linguagens", "Matemática", "Redação"),
-  cex.names = 0.70,
-  ylim = c(0, 600),
-  beside = TRUE,
-  legend = rownames(fuck),
-  #args.legend=list(x=ncol(fuck) + 100, y=max(colSums(fuck))+100, bty = "n")
-  args.legend = list(x ='right', bty='n', inset=c(-0.39,0), xpd = TRUE)
-  )
-
-```
+xxx
 
 
 
