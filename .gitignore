@@ -1,3 +1,9 @@
+# macOS
+.DS_Store
+
+# Remove DBs
+/*.csv
+
 # History files
 .Rhistory
 .Rapp.history
