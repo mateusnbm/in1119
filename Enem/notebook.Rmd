@@ -350,18 +350,189 @@ barplot(
 
 ## ...
 
-xxx
-
 ### Preparando os Dados
 
-xxx
+Agrupamos os dados pela escolaridade dos pais (A..G) e depois calculamos as médias das notas para cada área do conhecimento.
+
+```{r}
+
+# Agrupa os dados.
+
+father_gb_data = 
+  fdata %>% 
+  group_by(Q001)%>% 
+  summarise(NOTA_MEAN = (sum(NU_NOTA_CN+NU_NOTA_CH+NU_NOTA_LC+NU_NOTA_MT+NU_NOTA_REDACAO)/5)/n()
+  )
+
+mother_gb_data = 
+  fdata %>% 
+  group_by(Q002)%>% 
+  summarise(NOTA_MEAN = (sum(NU_NOTA_CN+NU_NOTA_CH+NU_NOTA_LC+NU_NOTA_MT+NU_NOTA_REDACAO)/5)/n()
+  )
+
+# Removemos as entradas para as quais o candidato desconhece a escolaridade da mãe ou pai.
+
+father_gb_data = father_gb_data[-c(8),]
+mother_gb_data = mother_gb_data[-c(8),]
+
+father_gb_data
+mother_gb_data
+
+```
 
 ### Gerando o Gráfico
 
-xxx
+Agora, que já temos os dados necessários, precisamos formatar eles para facilitar o uso com a função que gerará o gráfico. 
+
+O ideal seria utilizar alguma função para realizar a formatação mas, para agilizar e evitar estresse, iremos fazer manualmente.
+
+```{r}
+
+parents_gb_data_fmt = data.matrix(read.table(text = "
+     F         M
+  0  610.2344  590.4543
+  1  592.5938  578.8811
+  2  544.3216  535.8166
+  3  524.8589  516.2735
+  4  514.5845  507.8539
+  5  499.0910  494.4802
+  6  479.4759  474.9720
+  ", header = TRUE))
+
+education_names = as.vector(c(
+  "Pós-graduação ",
+  "Educação Superior ", 
+  "Ensino Médio ", 
+  "8ª/9º Ano Completo ",
+  "4ª/5º Ano Completo ",
+  "4ª/5º Ano Incompleto ", 
+  "Nunca Estudou "
+  ))
+
+parents_gb_data_fmt
+
+```
+
+Código para gerar o gráfico (o bloco abaixo precisa ser executado de uma vez, por completo).
+
+```{r}
+
+# Ajusta as dimensões do retângulo sobre o qual o gráfico é desenhado.
+# Isto é necessário para que os títulos dispostos ao longo do eixo Y fiquem visíveis.
+
+par(mar = c(4, 10, 4, 3))
+
+# Criamos dois vetores, um com as médias dos pais e outro com as médias das mães.
+# Apenas para facilitar passar os dados para a função que desenha o gráfico
+
+f_data = parents_gb_data_fmt[,"F"]
+m_data = parents_gb_data_fmt[,"M"]
+
+# Intervalo com a menor e maior média.
+
+grades_range = range(c(f_data, m_data))
+
+# Gera o gráfico sem as linhas, legendas e o grid.
+
+plot(
+  grades_range, 
+  c(1, 7), 
+  type = "n",
+  xaxs = "i",
+  yaxt = "n",
+  main = "Desempenho nas Disciplinas por Escolaridade dos Pais", 
+  xlab = "Média das Notas",
+  ylab = "",
+  xlim = c(400, 700)
+  ) 
+
+# Desenha as duas linhas (pais e mães).
+
+lines(f_data, c(1:7), type = "o", lwd = 2, col = "blue") 
+lines(m_data, c(1:7), type = "o", lwd = 2, col = "red")
+
+# Adiciona o grid e dispõe o texto ao longo do eixo Y.
+
+grid (NULL, NULL, lty = 6, col = "cornsilk2") 
+axis(2, at = c(1:7), labels = FALSE)
+text(y = c(1:7), par("usr")[1], labels = education_names, srt = 0, pos = 2, xpd = TRUE)
+
+# Adiciona a legenda das linhas.
+
+legend("topright", lty = "solid", lwd = 2, col=c("blue", "red"), legend = c("Pai", "Mãe"))
+
+```
+
+##
+
+### Preparando os Dados
+
+```{r}
+
+# Agrupa os dados.
+
+reason_gb_data = fdata %>% group_by(TP_STATUS_REDACAO) %>% summarise(COUNT = n())
+
+# Removemos as entradas para as quais a redação foi considerada válida.
+
+reason_gb_data = reason_gb_data[-c(1),]
+
+# Apresentando contagens.
+
+reason_gb_data
+
+```
 
 
+### Gerando o Gráfico
 
+Agora, que já temos os dados necessários, precisamos formatar eles para facilitar o uso com a função que gerará o gráfico. 
+
+```{r}
+
+counts = as.vector(unlist(reason_gb_data[,"COUNT"]))
+percentages = round(100*counts/sum(counts), 1)
+percentages = paste(percentages, "%", sep="")
+
+labels = c(
+  "Anulada", 
+  "Cópia do Texto Motivador", 
+  "Em Branco", 
+  "Fuga do Tema", 
+  "Tipo Textual Incorreto", 
+  "Texto Insuficiente", 
+  "Parte Desconectada"
+  )
+
+counts
+percentages
+
+```
+
+Código para gerar o gráfico (o bloco abaixo precisa ser executado de uma vez, por completo).
+
+```{r}
+
+#par(mfrow=c(1, 2), mai = c(1, 0, 1, 0))
+
+par(mar = c(0, 0, 4, 14))
+
+pie(
+  counts, 
+  labels = percentages, 
+  main = "Ocorrências de Falha na Redação", 
+  col = brewer.pal(length(counts), "Paired")
+  )
+
+legend(
+  "topright", 
+  labels,
+  fill = brewer.pal(length(counts), "Paired"),
+  inset=c(-0.5, 0),
+  xpd = TRUE
+  )
+
+```
 
 
 
