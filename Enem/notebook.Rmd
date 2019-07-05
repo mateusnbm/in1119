@@ -31,6 +31,14 @@ library(RColorBrewer)
 
 ```
 
+Biblioteca para facilitar análise de correlações.
+
+```{r}
+
+library(GGally)
+
+```
+
 ## Banco de Dados
 
 Carregando o banco de dados.
@@ -76,11 +84,64 @@ fdata = subset(
   TP_PRESENCA_CN == 1 & 
     TP_PRESENCA_CH == 1 & 
     TP_PRESENCA_LC == 1 & 
-    TP_PRESENCA_MT == 1 & 
     TP_PRESENCA_MT == 1
   )
 
 head(fdata)
+
+```
+
+## Boxplot das Notas (visualizar média, mediana, quartis).
+
+### Preparando os Dados
+
+Geramos um novo data frame contendo as colunas de notas.
+
+```{r}
+
+grades = select(
+  fdata, 
+  "NU_NOTA_CN", 
+  "NU_NOTA_CH", 
+  "NU_NOTA_LC", 
+  "NU_NOTA_MT", 
+  "NU_NOTA_REDACAO"
+  )
+
+areas_names = as.vector(c(
+  "C. da Natureza ",
+  "C. Humanas ",
+  "Linguagens ",
+  "Matemática ", 
+  "Redação "
+  ))
+
+```
+
+### Gerando o Gráfico
+
+Código para gerar o gráfico (o bloco abaixo precisa ser executado de uma vez, por completo).
+
+```{r}
+
+boxplot(
+  grades,
+  names = c("", "", "", "", ""),
+  par(mar = c(7, 4, 2, 2) + 0.1),
+  ylab = "Notas",
+  main = "Notas por Área do Conhecimento"
+  )
+
+title(xlab="Áreas do Conhecimento", line=6)
+
+text(
+  seq(1.2, 6, by=1),
+  par("usr")[3], 
+  srt = 45, 
+  adj= 1.3, 
+  xpd = TRUE,
+  labels = areas_names,
+  )
 
 ```
 
@@ -117,19 +178,19 @@ O ideal seria utilizar alguma função para realizar a formatação mas, para ag
 
 sex_gb_data_fmt = data.matrix(read.table(text = "
      M         F
-  0  577.0799  566.4753
-  1  560.2741  518.3447
+  0  500.6476  488.9929
+  1  510.8027  519.6946
   2  532.5310  525.7392
-  3  510.8027  519.6946
-  4  500.6476  488.9929
+  3  560.2741  518.3447
+  4  577.0799  566.4753
   ", header = TRUE))
 
 areas_names = as.vector(c(
-  "C. Humanas ",
-  "Matemática ", 
-  "Linguagens ", 
+  "C. da Natureza ", 
   "Redação ",
-  "C. da Natureza " 
+  "Linguagens ", 
+  "Matemática ", 
+  "C. Humanas "
   ))
 
 sex_gb_data_fmt
@@ -166,13 +227,15 @@ plot(
   main = "Desempenho das Disciplinas por Área e Sexo", 
   xlab = "Média das Notas",
   ylab = "",
-  xlim = c(400, 700)
+  xlim = c(400, 700),
+  panel.first = c(
+      abline(h=1, col=alpha("gray", 0.2), lwd=8),
+      abline(h=2, col=alpha("gray", 0.2), lwd=8),
+      abline(h=3, col=alpha("gray", 0.2), lwd=8),
+      abline(h=4, col=alpha("gray", 0.2), lwd=8),
+      abline(h=5, col=alpha("gray", 0.2), lwd=8)
+    )
   ) 
-
-# Desenha as duas linhas (homes e mulheres).
-
-lines(m_data, c(1:5), type = "o", lwd = 2, col = "blue") 
-lines(f_data, c(1:5), type = "o", lwd = 2, col = "red")
 
 # Adiciona o grid e dispõe o texto ao longo do eixo Y.
 
@@ -180,9 +243,14 @@ grid (NULL, NULL, lty = 6, col = "cornsilk2")
 axis(2, at = c(1:5), labels = FALSE)
 text(y = c(1:5), par("usr")[1], labels = areas_names, srt = 0, pos = 2, xpd = TRUE)
 
+# Desenha as duas linhas (homes e mulheres).
+
+lines(m_data, c(1:5), type = "o", lwd = 2, lty="dotted", col = "blue") 
+lines(f_data, c(1:5), type = "o", lwd = 2, lty="dotted", col = "red")
+
 # Adiciona a legenda das linhas.
 
-legend("topright", lty = "solid", lwd = 2, col=c("blue", "red"), legend = c("Homens", "Mulheres"))
+legend("topright", lty = "dotted", lwd = 2, col=c("blue", "red"), legend = c("Homens", "Mulheres"))
 
 ```
 
@@ -279,7 +347,6 @@ cfdata = subset(
     TP_PRESENCA_CH == 1 & 
     TP_PRESENCA_LC == 1 & 
     TP_PRESENCA_MT == 1 & 
-    TP_PRESENCA_MT == 1 & 
     TP_ANO_CONCLUIU > 0
   )
 
@@ -324,6 +391,8 @@ em_gp_data_fmt = data.matrix(read.table(text = "
 
 em_gp_data_fmt = em_gp_data_fmt * 0.2
 
+em_gp_data_fmt
+
 ```
 
 Código para gerar o gráfico (o bloco abaixo precisa ser executado de uma vez, por completo).
@@ -360,13 +429,13 @@ Agrupamos os dados pela escolaridade dos pais (A..G) e depois calculamos as méd
 
 father_gb_data = 
   fdata %>% 
-  group_by(Q001)%>% 
+  group_by(Q001) %>% 
   summarise(NOTA_MEAN = (sum(NU_NOTA_CN+NU_NOTA_CH+NU_NOTA_LC+NU_NOTA_MT+NU_NOTA_REDACAO)/5)/n()
   )
 
 mother_gb_data = 
   fdata %>% 
-  group_by(Q002)%>% 
+  group_by(Q002) %>% 
   summarise(NOTA_MEAN = (sum(NU_NOTA_CN+NU_NOTA_CH+NU_NOTA_LC+NU_NOTA_MT+NU_NOTA_REDACAO)/5)/n()
   )
 
@@ -390,23 +459,23 @@ O ideal seria utilizar alguma função para realizar a formatação mas, para ag
 
 parents_gb_data_fmt = data.matrix(read.table(text = "
      F         M
-  0  610.2344  590.4543
-  1  592.5938  578.8811
-  2  544.3216  535.8166
+  0  479.4759  474.9720
+  1  499.0910  494.4802
+  2  514.5845  507.8539
   3  524.8589  516.2735
-  4  514.5845  507.8539
-  5  499.0910  494.4802
-  6  479.4759  474.9720
+  4  544.3216  535.8166
+  5  592.5938  578.8811
+  6  610.2344  590.4543
   ", header = TRUE))
 
 education_names = as.vector(c(
-  "Pós-graduação ",
-  "Educação Superior ", 
-  "Ensino Médio ", 
-  "8ª/9º Ano Completo ",
-  "4ª/5º Ano Completo ",
+  "Nunca Estudou ",
   "4ª/5º Ano Incompleto ", 
-  "Nunca Estudou "
+  "4ª/5º Ano Completo ",
+  "8ª/9º Ano Completo ",
+  "Ensino Médio ", 
+  "Educação Superior ", 
+  "Pós-graduação "
   ))
 
 parents_gb_data_fmt
@@ -443,13 +512,17 @@ plot(
   main = "Desempenho nas Disciplinas por Escolaridade dos Pais", 
   xlab = "Média das Notas",
   ylab = "",
-  xlim = c(400, 700)
+  xlim = c(400, 700),
+  panel.first = c(
+      abline(h=1, col=alpha("gray", 0.2), lwd=8),
+      abline(h=2, col=alpha("gray", 0.2), lwd=8),
+      abline(h=3, col=alpha("gray", 0.2), lwd=8),
+      abline(h=4, col=alpha("gray", 0.2), lwd=8),
+      abline(h=5, col=alpha("gray", 0.2), lwd=8),
+      abline(h=6, col=alpha("gray", 0.2), lwd=8),
+      abline(h=7, col=alpha("gray", 0.2), lwd=8)
+    )
   ) 
-
-# Desenha as duas linhas (pais e mães).
-
-lines(f_data, c(1:7), type = "o", lwd = 2, col = "blue") 
-lines(m_data, c(1:7), type = "o", lwd = 2, col = "red")
 
 # Adiciona o grid e dispõe o texto ao longo do eixo Y.
 
@@ -457,13 +530,185 @@ grid (NULL, NULL, lty = 6, col = "cornsilk2")
 axis(2, at = c(1:7), labels = FALSE)
 text(y = c(1:7), par("usr")[1], labels = education_names, srt = 0, pos = 2, xpd = TRUE)
 
+# Desenha as duas linhas (pais e mães).
+
+lines(f_data, c(1:7), type = "o", lty="dotted", lwd = 2, col = "blue") 
+lines(m_data, c(1:7), type = "o", lty="dotted", lwd = 2, col = "red")
+
 # Adiciona a legenda das linhas.
 
-legend("topright", lty = "solid", lwd = 2, col=c("blue", "red"), legend = c("Pai", "Mãe"))
+legend("topright", lty = "dotted", lwd = 2, col=c("blue", "red"), legend = c("Pai", "Mãe"))
 
 ```
 
-##
+### Aplicando o Teste T-student
+
+Verificando a normalidade.
+
+```{r}
+
+father_a = subset(fdata, Q001 == 'A')
+father_a = (father_a$NU_NOTA_CH + father_a$NU_NOTA_CN + father_a$NU_NOTA_LC + father_a$NU_NOTA_MT + father_a$NU_NOTA_REDACAO) * 0.2
+
+father_a
+hist(father_a)
+
+shapiro.test(sample(father_a, 5000))
+
+d <- c(0.164,0.045,0.069,0.100,0.050,0.080,0.043,0.036,0.057,0.154,
+       0.133,0.193,0.129,0.121,0.081,0.178,0.041,0.040,0.116,0.078,
+       0.104,0.095,0.116,0.038,0.141,0.100,0.104,0.078,0.121,0.104)
+hist(d)
+
+ks.test(father_a, "pnorm")
+
+hist(father_a)
+library(nortest)
+ad.test(father_a)
+
+mean(father_a)
+median(father_a)
+qqnorm(father_a)
+
+length(father_a)
+
+father_b = subset(fdata, Q001 == 'B')
+father_c = subset(fdata, Q001 == 'C')
+father_d = subset(fdata, Q001 == 'D')
+father_e = subset(fdata, Q001 == 'E')
+father_f = subset(fdata, Q001 == 'F')
+father_g = subset(fdata, Q001 == 'G')
+
+mother_a = subset(fdata, Q002 == 'A')
+mother_a = (mother_a$NU_NOTA_CH + mother_a$NU_NOTA_CN + mother_a$NU_NOTA_LC + mother_a$NU_NOTA_MT + mother_a$NU_NOTA_REDACAO) * 0.2
+
+mother_b = subset(fdata, Q002 == 'B')
+mother_c = subset(fdata, Q002 == 'C')
+mother_d = subset(fdata, Q002 == 'D')
+mother_e = subset(fdata, Q002 == 'E')
+mother_f = subset(fdata, Q002 == 'F')
+mother_g = subset(fdata, Q002 == 'G')
+
+father_a
+mother_a
+
+length(father_a)
+length(mother_a)
+
+t.test(sample(father_a, 100000), sample(mother_a, 100000), paired = TRUE, alternative = "two.sided")
+
+t.test(sample(father_a, 10000), sample(mother_a, 10000), alternative = "two.sided", var.equal = FALSE)
+
+```
+
+## Média das Notas por Faixa de Renda
+
+### Preparando os Dados
+
+Agrupamos os dados pela renda familiar (A..Q) e depois calculamos as médias das notas para cada área do conhecimento.
+
+```{r}
+
+income_gb_data = 
+  fdata %>% 
+  group_by(Q006) %>% 
+  summarise(
+    NOTA_CN_MEAN = sum(NU_NOTA_CN)/n(),
+    NOTA_CH_MEAN = sum(NU_NOTA_CH)/n(),
+    NOTA_LC_MEAN = sum(NU_NOTA_LC)/n(),
+    NOTA_MT_MEAN = sum(NU_NOTA_MT)/n(),
+    NOTA_RD_MEAN = sum(NU_NOTA_REDACAO)/n()
+  )
+
+income_gb_data
+
+```
+
+### Gerando o Gráfico
+
+Agora, que já temos os dados necessários, precisamos formatar eles para facilitar o uso com a função que gerará o gráfico. 
+
+O ideal seria utilizar alguma função para realizar a formatação mas, para agilizar e evitar estresse, iremos fazer manualmente.
+
+```{r}
+
+income_gp_data_fmt = cbind(
+  as.numeric(as.vector(income_gb_data[1,]))[-1], 
+  as.numeric(as.vector(income_gb_data[2,]))[-1],
+  as.numeric(as.vector(income_gb_data[3,]))[-1],
+  as.numeric(as.vector(income_gb_data[4,]))[-1],
+  as.numeric(as.vector(income_gb_data[5,]))[-1],
+  as.numeric(as.vector(income_gb_data[6,]))[-1],
+  as.numeric(as.vector(income_gb_data[7,]))[-1],
+  as.numeric(as.vector(income_gb_data[8,]))[-1],
+  as.numeric(as.vector(income_gb_data[9,]))[-1],
+  as.numeric(as.vector(income_gb_data[10,]))[-1],
+  as.numeric(as.vector(income_gb_data[11,]))[-1],
+  as.numeric(as.vector(income_gb_data[12,]))[-1],
+  as.numeric(as.vector(income_gb_data[13,]))[-1],
+  as.numeric(as.vector(income_gb_data[14,]))[-1],
+  as.numeric(as.vector(income_gb_data[15,]))[-1],
+  as.numeric(as.vector(income_gb_data[16,]))[-1],
+  as.numeric(as.vector(income_gb_data[17,]))[-1]
+  ) * 0.2
+
+income_gp_data_fmt
+
+```
+
+Código para gerar o gráfico (o bloco abaixo precisa ser executado de uma vez, por completo).
+
+```{r}
+
+par(mar = c(5, 4 , 4, 10))
+
+barplot(
+  income_gp_data_fmt, 
+  main="Média das Notas por Renda Familiar",
+  ylab = "Média das Notas",
+  col=brewer.pal(nrow(income_gp_data_fmt), "Paired"),
+  legend = c("C. da Natureza", "C. Humanas", "Linguagens", "Matemática", "Redação"),
+  ylim = c(0, 700),
+  args.legend = list(x ='right', bty='n', inset=c(-0.39,0), xpd = TRUE),
+  xpd = FALSE
+  )
+
+title(xlab="Renda Familiar", line=4)
+
+names = c(
+  "Nenhuma", 
+  "< R$ 954",
+  "< R$ 1.431", 
+  "< R$ 1.908",
+  "< R$ 2.385",
+  "< R$ 2.862", 
+  "< R$ 3.816",
+  "< R$ 4.770", 
+  "< R$ 5.724",
+  "< R$ 6.678", 
+  "< R$ 7.632",
+  "< R$ 8.586", 
+  "< R$ 9.540",
+  "< R$ 11.448", 
+  "< R$ 14.310",
+  "< R$ 19.080",
+  "Superiores"
+  )
+
+text(
+  seq(1.5, 21, by=1.2),
+  par("usr")[3], 
+  srt = 45, 
+  adj= 1.25, 
+  xpd = TRUE,
+  labels = names,
+  cex=0.8
+  )
+
+```
+
+
+## Ocorrências de Falha na Redação
 
 ### Preparando os Dados
 
@@ -482,7 +727,6 @@ reason_gb_data = reason_gb_data[-c(1),]
 reason_gb_data
 
 ```
-
 
 ### Gerando o Gráfico
 
@@ -513,8 +757,6 @@ Código para gerar o gráfico (o bloco abaixo precisa ser executado de uma vez, 
 
 ```{r}
 
-#par(mfrow=c(1, 2), mai = c(1, 0, 1, 0))
-
 par(mar = c(0, 0, 4, 14))
 
 pie(
@@ -535,7 +777,35 @@ legend(
 ```
 
 
+##
 
+### Preparando os Dados
+
+### Gerando o Gráfico
+
+```{r}
+
+grade_means = (fdata$NU_NOTA_CN + fdata$NU_NOTA_CN + fdata$NU_NOTA_LC + fdata$NU_NOTA_MT + fdata$NU_NOTA_REDACAO) * 0.2
+vars = select(fdata, "CO_REGIAO_RESIDENCIA", "TP_SEXO", "TP_COR_RACA", "Q006")
+vars["MEAN"] = grade_means
+
+ggpairs(sample_frac(vars, 0.001))
+
+```
+
+
+
+```{r}
+
+sample_data <- data.frame( v1 = 1:100 + rnorm(100,sd=20), v2 = 1:100 + rnorm(100,sd=27), v3 = rep(1, 100) + rnorm(100, sd = 1)) 
+sample_data$v4 = sample_data$v1 ** 2 
+sample_data$v5 = -(sample_data$v1 ** 2) 
+
+sample_data
+
+ggpairs(sample_data) 
+
+```
 
 
 

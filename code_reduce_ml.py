@@ -5,6 +5,7 @@
 import math
 import pandas as pd
 import numpy as np
+import statistics as stats
 import matplotlib.pyplot as plt
 
 from sklearn import ensemble
@@ -33,24 +34,7 @@ cols_features = [
     "IN_TREINEIRO",
     "CO_UF_ESC",
     "TP_LOCALIZACAO_ESC",
-    "IN_BAIXA_VISAO",
-    "IN_CEGUEIRA",
-    "IN_SURDEZ",
-    "IN_DEFICIENCIA_AUDITIVA",
-    "IN_SURDO_CEGUEIRA",
-    "IN_DEFICIENCIA_FISICA",
-    "IN_DEFICIENCIA_MENTAL",
-    "IN_DEFICIT_ATENCAO",
-    "IN_DISLEXIA",
-    "IN_DISCALCULIA",
-    "IN_AUTISMO",
-    "IN_VISAO_MONOCULAR",
-    "IN_OUTRA_DEF",
     "CO_UF_PROVA",
-    "CO_PROVA_CN",
-    "CO_PROVA_CH",
-    "CO_PROVA_LC",
-    "CO_PROVA_MT",
     "Q001",
     "Q002",
     "Q003",
@@ -82,7 +66,12 @@ cols_features = [
 
 dataset = pd.read_csv("enem_2018.csv", delimiter=';', encoding="ISO-8859-1")
 dataset['NU_NOTA_MEAN'] = dataset[cols_grades].sum(axis=1) * 0.2
-dataset = dataset[(dataset.TP_PRESENCA_CN == 1) & (dataset.TP_PRESENCA_CH == 1) & (dataset.TP_PRESENCA_LC == 1) & (dataset.TP_PRESENCA_MT == 1) & (dataset.TP_PRESENCA_MT == 1)]
+dataset = dataset[
+    (dataset.TP_PRESENCA_CN == 1) &
+    (dataset.TP_PRESENCA_CH == 1) &
+    (dataset.TP_PRESENCA_LC == 1) &
+    (dataset.TP_PRESENCA_MT == 1)
+    ]
 dataset = dataset.dropna()
 
 dataset_data = dataset[cols_features]
@@ -97,22 +86,31 @@ dataset_data[cat_columns] = dataset_data[cat_columns].apply(lambda x: x.cat.code
 
 features, targets = shuffle(dataset_data, dataset_target, random_state=10)
 
-offset = int(features.shape[0] * 0.8)
+offset = int(features.shape[0] * 0.5)
 features_train, targets_train = features[:offset], targets[:offset]
 features_test, targets_test = features[offset:], targets[offset:]
 params = {
-    'n_estimators': 1000,
-    'max_depth': 8,
+    'n_estimators': 500,
+    'max_depth': 4,
     'min_samples_split': 2,
-    'learning_rate': 0.001,
+    'learning_rate': 0.01,
     'loss': 'ls'
     }
 
 clf = ensemble.GradientBoostingRegressor(**params)
 clf.fit(features_train, targets_train)
-mse = mean_squared_error(targets_test, clf.predict(features_test))
+predictions = clf.predict(features_test)
+mse = mean_squared_error(targets_test, predictions)
 
+tests = np.array(targets_test)
+differences = [abs(tests[i]-predictions[i]) for i in range(0, len(predictions))]
+em = stats.mean(differences)
+es = stats.stdev(differences)
+
+print("Error mean: %.4f" % em)
+print("Error std dev: %.4f" % es)
 print("MSE: %.4f" % mse)
+
 
 # ...
 
